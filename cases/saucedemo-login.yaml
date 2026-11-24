@@ -1,0 +1,6 @@
+# Milestone 1 input case
+target_url: https://www.saucedemo.com/
+requirement: |
+  用户用 standard_user / secret_sauce 登录，成功后进入商品列表页，
+  看到 Products 标题和至少一件商品。
+expected: 登录成功，URL 为 /inventory.html
