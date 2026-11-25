@@ -44,7 +44,7 @@ pytest --collect-only -q   # 应收集到 5 条：手写 1 条 + 生成 4 条
 注意：生成用例在 VM 里只验到 collect-only（returncode 0），真跑是否变绿仍需
 在你电脑上（或 CI）跑，`--browser-channel chrome` 备用跑法同样适用。
 报错文案三条已对过公开来源：密码错误 / 锁定 / 用户名为空的
-"Epic sadface: …" 原文。Analyzer（Day 11–12）仍是桩。
+"Epic sadface: …" 原文。Analyzer 已实现，见 Day 11–12 一节。
 
 ## Day 8–10：Healer 已实现（定位器自愈，带自愈率）
 
@@ -73,6 +73,28 @@ pytest --collect-only -q   # 应收集到 15 条：原 5 条 + 单测 9 条 + �
 ```bash
 pytest tests/test_saucedemo_login.py -v --browser-channel chrome
 ```
+
+## Day 11–12：Analyzer 已实现（失败分类，带 Flaky 率）
+
+失败不再只剩一条报错：Analyzer 按固定顺序用确定性规则给每次失败
+定性——重试通过算 flaky；连不上 / 浏览器起不来 / 导航超时算环境；
+定位器找不到、严格模式冲突、测试代码报错算脚本 Bug；页面到了、元素
+找到了但 expect 断言的值不对算产品 Bug；哪条规则都对不上就标 unknown
+（低置信度），不硬猜。每条记录都带匹配到的证据和下一步建议，方便人
+复核。实现在 `src/qa_agent/agents/analyzer.py`（`classify` / `analyze` /
+`write_analysis_summary`），单测在 `tests/test_analyzer.py`（13 条，
+只喂失败记录字典，不用浏览器）。
+
+```bash
+python -m qa_agent.agents.analyzer --demo   # 不用浏览器可验：5 条代表性失败各归一类，写 reports/analysis-summary.json
+pytest tests/test_analyzer.py -v             # 13 条单测，不用浏览器
+pytest --collect-only -q   # 应收集到 28 条：原 15 条 + Analyzer 单测 13 条
+```
+
+注意：产品 Bug 这一类置信度只给 medium——测试里写错期望值看起来和
+产品真出 Bug 一模一样，记录里写明了先对期望值再提 Bug。图里接线
+（Executor 失败后走 Analyzer、Reporter 汇总 Flaky 率）是下一步，不在
+这次改动里。
 
 ## 2 周 MVP 节奏
 
