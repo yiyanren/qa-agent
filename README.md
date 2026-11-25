@@ -44,7 +44,27 @@ pytest --collect-only -q   # 应收集到 5 条：手写 1 条 + 生成 4 条
 注意：生成用例在 VM 里只验到 collect-only（returncode 0），真跑是否变绿仍需
 在你电脑上（或 CI）跑，`--browser-channel chrome` 备用跑法同样适用。
 报错文案三条已对过公开来源：密码错误 / 锁定 / 用户名为空的
-"Epic sadface: …" 原文。Healer（Day 8–10）与 Analyzer（Day 11–12）仍是桩。
+"Epic sadface: …" 原文。Analyzer（Day 11–12）仍是桩。
+
+## Day 8–10：Healer 已实现（定位器自愈，带自愈率）
+
+定位器坏了不再直接挂用例：Healer 按固定顺序换策略找回同一个元素
+（`data-test` → `#id` / `name` → `placeholder` / 文本 → `role`），
+每次尝试都记下来，跑完能报自愈率。实现在
+`src/qa_agent/agents/healer.py`（`resolve` / `heal` / `heal_login` /
+`heal_rate`），假页面演示与单测在 `tests/test_healer.py`（9 条），
+真浏览器验证在 `tests/test_healer_live.py`（故意跳过三个 `data-test`
+主定位器，靠 `#id` 兜底仍能登录成功）。
+
+```bash
+python -m qa_agent.agents.healer --demo   # 不用浏览器可验：三个 data-test 全坏，靠 #id 找回，自愈率 1.00，写 reports/heal-summary.json
+pytest tests/test_healer.py -v             # 9 条单测，假页面，不用浏览器
+pytest tests/test_healer_live.py -v        # 真跑，需 Chromium（本地或 CI）
+pytest --collect-only -q   # 应收集到 15 条：原 5 条 + 单测 9 条 + 真跑验证 1 条
+```
+
+注意：真浏览器那条在 VM 里只验到 collect-only（VM 装不上 Chromium），
+是否真跑绿仍需在你电脑上或 CI 里跑——推上去后看 Actions 结果就是证明。
 
 如果 `playwright install chromium` 下载失败（网络受限），而你电脑上已经装了 Chrome，
 可以跳过下载，直接用本机 Chrome 跑（`--browser-channel` 是 pytest-playwright 自带参数，
