@@ -7,5 +7,8 @@ Healer: on failure, retries with a different locator strategy (max 2), logs befo
   Implemented Day 8: ordered fallback chain (data-test -> id/name ->
   placeholder/text -> role) with a recorded heal rate; see agents/healer.py.
 Analyzer: classifies failures as product bug / script bug / environment / flaky, with evidence.
+  Implemented Day 11: ordered deterministic rules (flaky on retry pass ->
+  environment -> script bug -> product bug -> unknown), with a recorded
+  flaky rate; see agents/analyzer.py.
 Reporter: Allure report + one-page metrics (pass rate, self-heal rate, flaky rate).
 """
