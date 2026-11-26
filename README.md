@@ -88,13 +88,20 @@ pytest tests/test_saucedemo_login.py -v --browser-channel chrome
 ```bash
 python -m qa_agent.agents.analyzer --demo   # 不用浏览器可验：5 条代表性失败各归一类，写 reports/analysis-summary.json
 pytest tests/test_analyzer.py -v             # 13 条单测，不用浏览器
-pytest --collect-only -q   # 应收集到 28 条：原 15 条 + Analyzer 单测 13 条
+pytest tests/test_graph_analyzer.py -v       # 7 条接线单测：喂 Executor 输出字典，不用浏览器
+pytest --collect-only -q   # 应收集到 35 条：原 28 条 + 接线单测 7 条
 ```
 
 注意：产品 Bug 这一类置信度只给 medium——测试里写错期望值看起来和
-产品真出 Bug 一模一样，记录里写明了先对期望值再提 Bug。图里接线
-（Executor 失败后走 Analyzer、Reporter 汇总 Flaky 率）是下一步，不在
-这次改动里。
+产品真出 Bug 一模一样，记录里写明了先对期望值再提 Bug。
+
+图里接线已完成（2026-11-26）：`graph.py` 现在是 Planner → Generator →
+Executor → Analyzer → Reporter。Analyzer 节点从 Executor 输出尾部
+解析 `FAILED <用例> - <报错>` 行再分类，Reporter 把 `analysis`
+（total / by_category / flaky_rate）写进 reports/summary.json；绿跑
+时分析结果为 0 条失败、flaky_rate=0.00。诚实边界：解析只认 FAILED
+行——失败输出被截断或根本没有 FAILED 行时，只记一条 unknown，不
+硬猜；第一次真实失败分类出来后值得复核一次规则是否贴合。
 
 ## 2 周 MVP 节奏
 
