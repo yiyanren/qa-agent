@@ -250,6 +250,63 @@ def write_analysis_summary(analysis: dict, path: str | Path) -> Path:
     return out
 
 
+def extract_failures(output: str) -> list[dict]:
+    """Pull failure records out of pytest ``-v`` output.
+
+    pytest prints one ``FAILED <testid> - <error summary>`` line per
+    failed test (also in the short summary at the end, which survives
+    the Executor's 4000-character output tail). The summary after the
+    dash becomes the record's error text, so the normal ``classify()``
+    rules apply unchanged. Lines without a dash still yield a record
+    with an empty error — it classifies as unknown, not as a guess.
+    Returns [] when the output has no FAILED line at all.
+    """
+    failures: list[dict] = []
+    seen: set[str] = set()
+    for line in (output or "").splitlines():
+        line = line.strip()
+        if not line.startswith("FAILED "):
+            continue
+        rest = line[len("FAILED ") :].strip()
+        if " - " in rest:
+            test, error = rest.split(" - ", 1)
+        else:
+            test, error = rest, ""
+        test = test.strip()
+        if not test or test in seen:
+            continue
+        seen.add(test)
+        error_type = error.split(":", 1)[0].strip() if ":" in error else ""
+        failures.append({"test": test, "error_type": error_type, "error": error.strip()})
+    return failures
+
+
+def failures_from_results(results: dict) -> list[dict]:
+    """Failure records for one Executor result dict.
+
+    A green run (returncode 0) has no failures. A failed run whose
+    output has no FAILED line — truncated, or a crash before pytest
+    reported — yields one honest unknown record carrying the last
+    output line, instead of silently reporting zero failures.
+    """
+    if results.get("returncode") == 0:
+        return []
+    failures = extract_failures(str(results.get("output_tail") or ""))
+    if failures:
+        return failures
+    tail_lines = [ln.strip() for ln in str(results.get("output_tail") or "").splitlines()]
+    tail_lines = [ln for ln in tail_lines if ln]
+    return [
+        {
+            "test": "",
+            "error_type": "",
+            "error": tail_lines[-1]
+            if tail_lines
+            else "executor failed, output had no FAILED lines",
+        }
+    ]
+
+
 def demo_failures() -> list[dict]:
     """Five representative failures: one per category, plus an unknown.
 
