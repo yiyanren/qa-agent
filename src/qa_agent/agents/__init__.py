@@ -9,6 +9,7 @@ Healer: on failure, retries with a different locator strategy (max 2), logs befo
 Analyzer: classifies failures as product bug / script bug / environment / flaky, with evidence.
   Implemented Day 11: ordered deterministic rules (flaky on retry pass ->
   environment -> script bug -> product bug -> unknown), with a recorded
-  flaky rate; see agents/analyzer.py.
+  flaky rate; see agents/analyzer.py. Wired into graph.py (Executor failure
+  -> Analyzer -> Reporter flaky rate) on 2026-11-26; see tests/test_graph_analyzer.py.
 Reporter: Allure report + one-page metrics (pass rate, self-heal rate, flaky rate).
 """
