@@ -11,6 +11,9 @@ flaky rate.
 Run it:
     python -m qa_agent.graph --case cases/saucedemo-login.yaml --dry-run
     python -m qa_agent.graph --case cases/saucedemo-login.yaml   # full run
+    python -m qa_agent.graph --case cases/the-internet-login.yaml --dry-run
+    # full run, second site (needs Chromium, on ren's machine or in CI)
+    python -m qa_agent.graph --case cases/the-internet-login.yaml
 """
 
 from __future__ import annotations
@@ -108,8 +111,16 @@ def main() -> None:
         help="collect-only: verify generated code without a browser",
     )
     args = parser.parse_args()
+    # Default output follows the case: the-internet cases render to their
+    # own generated file instead of overwriting the SauceDemo one. An
+    # explicit --out always wins.
+    out_path = args.out
+    if out_path == str(DEFAULT_OUT) and "the-internet" in args.case:
+        out_path = str(
+            PROJECT_ROOT / "tests" / "generated" / "test_the_internet_login_generated.py"
+        )
     result = build_graph().invoke(
-        {"case_path": args.case, "out_path": args.out, "dry_run": args.dry_run}
+        {"case_path": args.case, "out_path": out_path, "dry_run": args.dry_run}
     )
     print(f"generated: {result['generated_files']}")
     print(
