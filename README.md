@@ -103,6 +103,49 @@ Executor → Analyzer → Reporter。Analyzer 节点从 Executor 输出尾部
 行——失败输出被截断或根本没有 FAILED 行时，只记一条 unknown，不
 硬猜；第一次真实失败分类出来后值得复核一次规则是否贴合。
 
+## Day 13–14：换站验证已实现（the-internet.herokuapp.com，待真跑）
+
+只加一个 YAML 跑不通第二站：Planner / Generator 原来是按 saucedemo
+写死的（standard_user、data-test 定位器、/inventory.html、Products
+断言），直接跑会给 the-internet 生成一套全错的用例。所以这一步先
+把两处改成按站分发，再加用例：
+
+- Planner 按 `target_url` 分站：the-internet 用 tomsmith /
+  SuperSecretPassword!，4 条等价类为登录成功 / 密码错误 / 用户名错误 /
+  用户名为空（本站没有锁定用户，用用户名错误替代）；策略里自带该站
+  的定位器与提示文案。saucedemo 策略原样保留。
+- Generator 按 `site` 渲染两套模板：the-internet 用 `#username`、
+  `#password`、`button[type=submit]`，成功断言 `/secure` +
+  `#flash` 含 "You logged into a secure area!"；失败断言 `#flash`
+  含对应错误 + 仍在 `/login`。`#flash` 文案后带 "×" 关闭按钮，
+  所以一律用 `to_contain_text`，不用精确匹配——精确匹配会在正确
+  登录时也失败。错误逐字文案已于 2026-11-27 对过多个独立公开来源
+  （Robot Framework 数据驱动登录、qable.io Playwright 实跑、noalabs
+  Cypress / AI-testing 指南，均为同一组文案），第一次真跑仍是最终证明。
+- 新增 `cases/the-internet-login.yaml`、手写
+  `tests/test_the_internet_login.py`（1 条）、生成
+  `tests/generated/test_the_internet_login_generated.py`（参数化 1 个
+  用例函数 × 4 组数据）；`graph.py` 不传 `--out` 时按 case 自动选
+  生成文件，不会覆盖 saucedemo 的生成文件。另加
+  `tests/test_planner_sites.py`（4 条无浏览器单测）守住分站逻辑。
+
+```bash
+python -m qa_agent.graph --case cases/the-internet-login.yaml --dry-run  # 生成 + collect-only
+pytest --collect-only -q   # 应收集到 44 条：原 35 条 + 手写 1 条 + 生成 4 条 + 分站单测 4 条
+pytest tests/test_planner_sites.py tests/test_analyzer.py tests/test_graph_analyzer.py tests/test_healer.py -q  # 33 条无浏览器单测
+python -m qa_agent.graph --case cases/the-internet-login.yaml  # 真跑，需 Chromium（你电脑或 CI）
+```
+
+本地已验（2026-11-27）：两站 dry-run 均 returncode 0；saucedemo
+生成文件与改动前逐字节一致；44 条 collect-only；33 条无浏览器单测
+全过；ruff 全过。真跑仍待你电脑或 CI：5 条 the-internet 用例
+（手写 1 + 生成 4）是否变绿、Analyzer 第一次真实失败分类、README
+指标表数字，都等真跑完再填，不编。
+
+诚实边界：Healer 仍是 saucedemo 专用的（`LOGIN_LOCATORS` 与
+`heal_login` 的目标站都没改），本站“破坏 #id 后靠 name / role 找回”
+的自愈实验还没做，是下一步的可选项，不是这次已完成的部分。
+
 ## 2 周 MVP 节奏
 
 - 第 1 周：跑通闭环 — Day 1–2 搭结构跑通首条用例；Day 3–4 Planner→Generator
