@@ -103,7 +103,7 @@ Executor → Analyzer → Reporter。Analyzer 节点从 Executor 输出尾部
 行——失败输出被截断或根本没有 FAILED 行时，只记一条 unknown，不
 硬猜；第一次真实失败分类出来后值得复核一次规则是否贴合。
 
-## Day 13–14：换站验证已实现（the-internet.herokuapp.com，待真跑）
+## Day 13–14：换站验证（the-internet.herokuapp.com，已真跑绿）
 
 只加一个 YAML 跑不通第二站：Planner / Generator 原来是按 saucedemo
 写死的（standard_user、data-test 定位器、/inventory.html、Products
@@ -138,13 +138,32 @@ python -m qa_agent.graph --case cases/the-internet-login.yaml  # 真跑，需 Ch
 
 本地已验（2026-11-27）：两站 dry-run 均 returncode 0；saucedemo
 生成文件与改动前逐字节一致；44 条 collect-only；33 条无浏览器单测
-全过；ruff 全过。真跑仍待你电脑或 CI：5 条 the-internet 用例
-（手写 1 + 生成 4）是否变绿、Analyzer 第一次真实失败分类、README
-指标表数字，都等真跑完再填，不编。
+全过；ruff 全过。真跑已由 CI 完成（2026-11-27，run 45983821637）：
+44 条全过，5 条 the-internet 用例（手写 1 + 生成 4）首次真绿，
+指标见下一节。Analyzer 第一次真实失败分类仍待一次真实失败样本。
 
 诚实边界：Healer 仍是 saucedemo 专用的（`LOGIN_LOCATORS` 与
 `heal_login` 的目标站都没改），本站“破坏 #id 后靠 name / role 找回”
 的自愈实验还没做，是下一步的可选项，不是这次已完成的部分。
+
+## 指标（真跑，2026-11-27 CI）
+
+数字依据 GitHub Actions run 45983821637（44/44 全过）。
+
+| 指标 | 数字 |
+|---|---|
+| 测试总数 / 通过 | 44 / 44，通过率 100% |
+| saucedemo 登录 | 5 条（手写 1 + 生成 4） |
+| the-internet 登录 | 5 条（手写 1 + 生成 4，首次真绿） |
+| 无浏览器单测 | 33 条（分站 4 + Analyzer 13 + 接线 7 + Healer 9） |
+| Healer 真浏览器验证 | 1 条通过（跳过 data-test、靠 #id 兜底） |
+| Flaky 率 | 0.00（本次绿跑 0 条失败的直接结果） |
+| 自愈率 | 1.00（healer --demo 假页面 3/3，见 reports/heal-summary.json） |
+
+边界：自愈率 1.00 是 healer --demo 在假页面上的 3/3，不是 CI 实测
+自愈率；CI 里只有 1 条 Healer 真浏览器验证，与自愈率分开计。
+本地 reports/summary.json 仍是旧的 saucedemo dry-run collect-only
+数据，未作为真跑数字引用。
 
 ## 2 周 MVP 节奏
 
