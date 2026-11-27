@@ -1,0 +1,7 @@
+# Day 13-14 input case: second site, same login shape as SauceDemo
+target_url: https://the-internet.herokuapp.com/login
+requirement: |
+  用户用 tomsmith / SuperSecretPassword! 登录，成功后进入 Secure Area 页，
+  看到 "You logged into a secure area!" 提示；用户名或密码错时留在登录页，
+  看到 #flash 里的对应错误提示。
+expected: 登录成功，URL 为 /secure
